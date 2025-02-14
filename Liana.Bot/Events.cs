@@ -2,7 +2,7 @@
 using Discord.WebSocket;
 using Serilog;
 
-namespace Bot.Template;
+namespace Liana.Bot;
 
 public class Events(DiscordSocketClient client)
 {
@@ -85,7 +85,7 @@ public class Events(DiscordSocketClient client)
             await channel.SendMessageAsync(embed: new EmbedBuilder()
                 .WithTitle("Client Disconnected")
                 .WithDescription(exception.Message)
-                .WithColor(Color.Green)
+                .WithColor(Color.Gold)
                 .WithCurrentTimestamp()
                 .Build());
         }).ContinueWith(t =>

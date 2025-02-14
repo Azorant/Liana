@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
-namespace Bot.Template.HostedServices;
+namespace Liana.Bot.HostedServices;
 
 internal sealed class ClientStatus(DiscordSocketClient client) : IHostedService, IDisposable
 {

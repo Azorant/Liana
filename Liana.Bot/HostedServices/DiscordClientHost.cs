@@ -7,7 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
 
-namespace Bot.Template.HostedServices;
+namespace Liana.Bot.HostedServices;
 
 internal sealed class DiscordClientHost : IHostedService
 {

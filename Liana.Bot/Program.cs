@@ -1,16 +1,19 @@
-﻿using Bot.Template;
-using Bot.Template.HostedServices;
+﻿using Liana.Bot;
+using Liana.Bot.HostedServices;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Fergun.Interactive;
+using Liana.Database;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using Serilog.Events;
 
 try
 {
     Log.Logger = new LoggerConfiguration()
+        .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
         .MinimumLevel.Verbose()
         .Enrich.FromLogContext()
         .WriteTo.Console()
@@ -18,11 +21,13 @@ try
     var builder = new HostApplicationBuilder();
 
     builder.Services
+        .AddDbContext<DatabaseContext>(options => DatabaseContextFactory.CreateDbOptions(options))
         .AddSingleton(new InteractiveConfig { ReturnAfterSendingPaginator = true })
         .AddSingleton<InteractiveService>()
         .AddSingleton(new DiscordSocketConfig
         {
-            GatewayIntents = GatewayIntents.Guilds
+            GatewayIntents = GatewayIntents.All,
+            AlwaysDownloadUsers = true
         })
         .AddSingleton<DiscordSocketClient>()
         .AddSingleton<InteractionService>(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>()))
@@ -31,7 +36,15 @@ try
         .AddHostedService<ClientStatus>()
         .AddSerilog();
 
-    builder.Build().Run();
+    var host = builder.Build();
+
+    using (var scope = host.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
+        db.ApplyMigrations();
+    }
+
+    host.Run();
 }
 catch (Exception error)
 {

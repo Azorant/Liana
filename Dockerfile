@@ -6,17 +6,19 @@ ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["Bot.Template/Bot.Template.csproj", "Bot.Template/"]
-RUN dotnet restore "Bot.Template/Bot.Template.csproj"
+COPY ["Liana.sln", "."]
+COPY ["Liana.Bot/Liana.Bot.csproj", "Liana.Bot/"]
+COPY ["Liana.Database/Liana.Database.csproj", "Liana.Database/"]
+RUN dotnet restore
 COPY . .
-WORKDIR "/src/Bot.Template"
-RUN dotnet build "Bot.Template.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/Liana.Bot"
+RUN dotnet build "Liana.Bot.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "Bot.Template.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "Liana.Bot.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "Bot.Template.dll"]
+ENTRYPOINT ["dotnet", "Liana.Bot.dll"]
