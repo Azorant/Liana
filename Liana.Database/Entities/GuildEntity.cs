@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using Liana.Database.Models;
+using Liana.Models;
 
 namespace Liana.Database.Entities;
 

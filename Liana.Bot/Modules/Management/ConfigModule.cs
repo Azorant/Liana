@@ -1,7 +1,8 @@
 ﻿using Discord;
 using Discord.Interactions;
 using Liana.Database;
-using Liana.Database.Models.Enums;
+using Liana.Models;
+using Liana.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using YamlDotNet.Core;

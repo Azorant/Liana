@@ -1,4 +1,4 @@
-﻿namespace Liana.Database.Models.Enums;
+﻿namespace Liana.Models.Enums;
 
 public enum RoleEnum
 {

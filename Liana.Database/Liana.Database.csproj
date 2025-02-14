@@ -16,5 +16,9 @@
         <PackageReference Include="Pomelo.EntityFrameworkCore.MySql.Json.Microsoft" Version="9.0.0-preview.2.efcore.9.0.0" />
         <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
     </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Liana.Models\Liana.Models.csproj" />
+    </ItemGroup>
     
 </Project>

@@ -9,6 +9,7 @@ WORKDIR /src
 COPY ["Liana.sln", "."]
 COPY ["Liana.Bot/Liana.Bot.csproj", "Liana.Bot/"]
 COPY ["Liana.Database/Liana.Database.csproj", "Liana.Database/"]
+COPY ["Liana.Models/Liana.Models.csproj", "Liana.Models/"]
 RUN dotnet restore
 COPY . .
 WORKDIR "/src/Liana.Bot"

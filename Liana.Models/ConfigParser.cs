@@ -1,8 +1,7 @@
-﻿using Liana.Database.Models;
-using YamlDotNet.Serialization;
+﻿using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-namespace Liana.Bot;
+namespace Liana.Models;
 
 public static class ConfigParser
 {

@@ -1,4 +1,4 @@
-﻿namespace Liana.Database.Models.Enums;
+﻿namespace Liana.Models.Enums;
 
 public enum AuditEventEnum
 {
@@ -15,7 +15,6 @@ public enum AuditEventEnum
     RoleAdd,
     RoleRemove,
     RoleCreate,
-    RoleUpdate,
     RoleDelete,
     NicknameAdd,
     NicknameRemove,

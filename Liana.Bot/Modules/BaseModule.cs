@@ -2,8 +2,8 @@
 using Discord.Interactions;
 using Liana.Database;
 using Liana.Database.Entities;
-using Liana.Database.Models;
-using Liana.Database.Models.Enums;
+using Liana.Models;
+using Liana.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Liana.Bot.Modules;

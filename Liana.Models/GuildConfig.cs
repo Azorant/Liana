@@ -1,7 +1,7 @@
-﻿using Liana.Database.Models.Enums;
-using Liana.Database.Models.Modules;
+﻿using Liana.Models.Enums;
+using Liana.Models.Modules;
 
-namespace Liana.Database.Models;
+namespace Liana.Models;
 
 public class GuildConfig
 {

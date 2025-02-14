@@ -1,6 +1,6 @@
-﻿using Liana.Database.Models.Enums;
+﻿using Liana.Models.Enums;
 
-namespace Liana.Database.Models.Modules;
+namespace Liana.Models.Modules;
 
 public class AuditLogConfig
 {
