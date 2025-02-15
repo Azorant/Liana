@@ -7,6 +7,7 @@ namespace Liana.Database;
 public class DatabaseContext(DbContextOptions<DatabaseContext> options) : DbContext(options)
 {
     public DbSet<GuildEntity> Guilds { get; set; }
+    public DbSet<MessageEntity> Messages { get; set; }
 
     public void ApplyMigrations()
     {
@@ -29,6 +30,13 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : DbCont
             entity =>
             {
                 entity.Property(e => e.Config)
+                    .HasColumnType("json");
+            });
+
+        modelBuilder.Entity<MessageEntity>(
+            entity =>
+            {
+                entity.Property(e => e.Attachments)
                     .HasColumnType("json");
             });
     }

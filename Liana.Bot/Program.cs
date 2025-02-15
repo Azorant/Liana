@@ -4,6 +4,7 @@ using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Fergun.Interactive;
+using Liana.Bot.Services;
 using Liana.Database;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -32,6 +33,7 @@ try
         .AddSingleton<DiscordSocketClient>()
         .AddSingleton<InteractionService>(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>()))
         .AddSingleton<Events>()
+        .AddTransient<AuditLogService>()
         .AddHostedService<DiscordClientHost>()
         .AddHostedService<ClientStatus>()
         .AddSerilog();

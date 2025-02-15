@@ -15,6 +15,7 @@ public enum AuditEventEnum
     RoleAdd,
     RoleRemove,
     RoleCreate,
+    RoleUpdate,
     RoleDelete,
     NicknameAdd,
     NicknameRemove,
