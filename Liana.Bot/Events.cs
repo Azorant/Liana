@@ -230,4 +230,30 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
         });
         return Task.CompletedTask;
     }
+
+    public Task OnMessageDelete(Cacheable<IMessage, ulong> cacheableMessage, Cacheable<IMessageChannel, ulong> cacheableChannel)
+    {
+        Task.Run(async () =>
+        {
+            var message = await db.Messages.FirstOrDefaultAsync(m => m.Id == cacheableMessage.Id);
+            if (message == null) return;
+            message.Deleted = true;
+            db.Update(message);
+            await db.SaveChangesAsync();
+
+            var channel = await cacheableChannel.GetOrDownloadAsync() as SocketGuildChannel;
+
+            await auditLogService.SendAuditLog(message.GuildId, message.ChannelId, AuditEventEnum.MessageDelete,
+                new FormatLogOptions
+                {
+                    Channel = channel,
+                    Message = message,
+                    User = channel?.Guild.GetUser(message.AuthorId)
+                });
+        }).ContinueWith(t =>
+        {
+            if (t.Exception != null) Log.Error(t.Exception, "Error while logging message delete");
+        });
+        return Task.CompletedTask;
+    }
 }

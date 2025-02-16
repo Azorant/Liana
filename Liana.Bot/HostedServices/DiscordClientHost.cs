@@ -45,15 +45,16 @@ internal sealed class DiscordClientHost : IHostedService
         client.Disconnected += events.OnClientDisconnected;
         interactionService.Log += LogAsync;
         interactionService.SlashCommandExecuted += SlashCommandExecuted;
-        
+
         #region guild events
         client.ChannelCreated += events.OnChannelCreated;
         client.ChannelUpdated += events.OnChannelUpdated;
         client.ChannelDestroyed += events.OnChannelDeleted;
         client.MessageReceived += events.OnMessageCreate;
         client.MessageUpdated += events.OnMessageUpdate;
+        client.MessageDeleted += events.OnMessageDelete;
         #endregion
-        
+
         await client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("TOKEN"));
         await client.StartAsync();
     }
@@ -75,8 +76,9 @@ internal sealed class DiscordClientHost : IHostedService
         client.ChannelUpdated -= events.OnChannelUpdated;
         client.ChannelDestroyed -= events.OnChannelDeleted;
         client.MessageReceived -= events.OnMessageCreate;
+        client.MessageDeleted -= events.OnMessageDelete;
         #endregion
-        
+
         await client.StopAsync();
     }
 

@@ -55,7 +55,8 @@ public class AuditLogService(DatabaseContext db, DiscordSocketClient client)
                 AuditEventEnum.BanRemove => config.BanRemove ?? AuditLogMessages.BanRemove,
                 _ => $"{auditEvent.ToString()} event is missing template"
             };
-            
+
+            // TODO: Message queueing system
             await channel.SendMessageAsync(Formatter.FormatLog(message, options), allowedMentions: AllowedMentions.None);
         }
     }
