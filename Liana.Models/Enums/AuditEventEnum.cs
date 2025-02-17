@@ -12,8 +12,8 @@ public enum AuditEventEnum
     VoiceChannelSwitch,
     MemberAdd,
     MemberRemove,
-    RoleAdd,
-    RoleRemove,
+    MemberRoleAdd,
+    MemberRoleRemove,
     RoleCreate,
     RoleUpdate,
     RoleDelete,
@@ -22,5 +22,6 @@ public enum AuditEventEnum
     NicknameUpdate,
     UsernameChange,
     BanAdd,
-    BanRemove
+    BanRemove,
+    All
 }

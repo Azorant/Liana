@@ -50,9 +50,17 @@ internal sealed class DiscordClientHost : IHostedService
         client.ChannelCreated += events.OnChannelCreated;
         client.ChannelUpdated += events.OnChannelUpdated;
         client.ChannelDestroyed += events.OnChannelDeleted;
-        client.MessageReceived += events.OnMessageCreate;
-        client.MessageUpdated += events.OnMessageUpdate;
-        client.MessageDeleted += events.OnMessageDelete;
+        client.MessageReceived += events.OnMessageCreated;
+        client.MessageUpdated += events.OnMessageUpdated;
+        client.MessageDeleted += events.OnMessageDeleted;
+        client.MessagesBulkDeleted += events.OnMessageBulkDeleted;
+        client.UserVoiceStateUpdated += events.OnVoiceStateUpdated;
+        client.UserJoined += events.OnMemberJoined;
+        client.UserLeft += events.OnMemberLeft;
+        client.GuildMemberUpdated += events.OnMemberUpdated;
+        client.RoleCreated += events.OnRoleCreated;
+        client.RoleUpdated += events.OnRoleUpdated;
+        client.RoleDeleted += events.OnRoleDeleted;
         #endregion
 
         await client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("TOKEN"));
@@ -75,8 +83,16 @@ internal sealed class DiscordClientHost : IHostedService
         client.ChannelCreated -= events.OnChannelCreated;
         client.ChannelUpdated -= events.OnChannelUpdated;
         client.ChannelDestroyed -= events.OnChannelDeleted;
-        client.MessageReceived -= events.OnMessageCreate;
-        client.MessageDeleted -= events.OnMessageDelete;
+        client.MessageReceived -= events.OnMessageCreated;
+        client.MessageDeleted -= events.OnMessageDeleted;
+        client.MessagesBulkDeleted -= events.OnMessageBulkDeleted;
+        client.UserVoiceStateUpdated -= events.OnVoiceStateUpdated;
+        client.UserJoined -= events.OnMemberJoined;
+        client.UserLeft -= events.OnMemberLeft;
+        client.GuildMemberUpdated -= events.OnMemberUpdated;
+        client.RoleCreated -= events.OnRoleCreated;
+        client.RoleUpdated -= events.OnRoleUpdated;
+        client.RoleDeleted -= events.OnRoleDeleted;
         #endregion
 
         await client.StopAsync();

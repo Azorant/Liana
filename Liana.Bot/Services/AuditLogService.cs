@@ -1,7 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using Liana.Database;
-using Liana.Database.Entities;
 using Liana.Models.Constants;
 using Liana.Models.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -16,7 +15,7 @@ public class AuditLogService(DatabaseContext db, DiscordSocketClient client)
         if (guild?.Config.AuditLogs == null ||
             guild.Config.AuditLogs.Count == 0) return;
 
-        var configs = guild.Config.AuditLogs.Where(c => c.Value.EnabledEvents.Contains(auditEvent)).ToList();
+        var configs = guild.Config.AuditLogs.Where(c => c.Value.EnabledEvents.Contains(auditEvent) || c.Value.EnabledEvents.Contains(AuditEventEnum.All)).ToList();
 
         foreach (var (logChannelId, config) in configs)
         {
@@ -42,8 +41,8 @@ public class AuditLogService(DatabaseContext db, DiscordSocketClient client)
                 AuditEventEnum.VoiceChannelSwitch => config.VoiceChannelSwitch ?? AuditLogMessages.VoiceChannelSwitch,
                 AuditEventEnum.MemberAdd => config.MemberAdd ?? AuditLogMessages.MemberAdd,
                 AuditEventEnum.MemberRemove => config.MemberRemove ?? AuditLogMessages.MemberRemove,
-                AuditEventEnum.RoleAdd => config.RoleAdd ?? AuditLogMessages.RoleAdd,
-                AuditEventEnum.RoleRemove => config.RoleRemove ?? AuditLogMessages.RoleRemove,
+                AuditEventEnum.MemberRoleAdd => config.RoleAdd ?? AuditLogMessages.RoleAdd,
+                AuditEventEnum.MemberRoleRemove => config.RoleRemove ?? AuditLogMessages.RoleRemove,
                 AuditEventEnum.RoleCreate => config.RoleCreate ?? AuditLogMessages.RoleCreate,
                 AuditEventEnum.RoleUpdate => config.RoleUpdate ?? AuditLogMessages.RoleUpdate,
                 AuditEventEnum.RoleDelete => config.RoleDelete ?? AuditLogMessages.RoleDelete,
@@ -59,5 +58,25 @@ public class AuditLogService(DatabaseContext db, DiscordSocketClient client)
             // TODO: Message queueing system
             await channel.SendMessageAsync(Formatter.FormatLog(message, options), allowedMentions: AllowedMentions.None);
         }
+    }
+
+    public async Task SendAuditLog(SocketGuild guild, ulong? channelId, AuditEventEnum auditEvent, FormatLogOptions options)
+    {
+        await SendAuditLog(guild.Id, channelId, auditEvent, options);
+    }
+
+    public async Task SendAuditLog(SocketGuild guild, SocketGuildChannel? channel, AuditEventEnum auditEvent, FormatLogOptions options)
+    {
+        await SendAuditLog(guild.Id, channel?.Id, auditEvent, options);
+    }
+
+    public async Task SendAuditLog(ulong guildId, AuditEventEnum auditEvent, FormatLogOptions options)
+    {
+        await SendAuditLog(guildId, null, auditEvent, options);
+    }
+
+    public async Task SendAuditLog(SocketGuild guild, AuditEventEnum auditEvent, FormatLogOptions options)
+    {
+        await SendAuditLog(guild.Id, null, auditEvent, options);
     }
 }

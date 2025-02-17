@@ -22,7 +22,7 @@ public class ConfigModule(DatabaseContext db) : BaseModule(db)
             await SendErrorAsync("Missing permission to view config");
             return;
         }
-        
+
         // TODO: Check if yaml is greater than character limit and send as file
         await FollowupAsync(embed: new EmbedBuilder()
             .WithTitle("Current Config")
@@ -41,7 +41,8 @@ public class ConfigModule(DatabaseContext db) : BaseModule(db)
             return;
         }
 
-        await Context.Interaction.RespondWithModalAsync<ConfigModal>("config_modal");
+        await Context.Interaction.RespondWithModalAsync<ConfigModal>("config_modal",
+            modifyModal: options => options.UpdateTextInput("config", input => input.Value = ConfigParser.Serialize(config)));
     }
 
     public class ConfigModal : IModal
@@ -74,6 +75,5 @@ public class ConfigModule(DatabaseContext db) : BaseModule(db)
             Log.Error(ex, "Failed to parse config");
             await SendErrorAsync(ex.Message);
         }
-       
     }
 }

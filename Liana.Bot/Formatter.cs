@@ -37,7 +37,7 @@ public static class Formatter
                 .ReplaceRegex("{user.tag}", Format.UsernameAndDiscriminator(options.User, false))
                 .ReplaceRegex("{user.avatar}", options.User.GetAvatarUrl())
                 .ReplaceRegex("{user.mention}", MentionUtils.MentionUser(options.User.Id))
-                .ReplaceRegex("{user.age}", DateTimeOffset.UtcNow.Subtract(options.User.CreatedAt).Humanize(4));
+                .ReplaceRegex("{user.age}", DateTimeOffset.UtcNow.Subtract(options.User.CreatedAt).Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second));
         }
 
         if (options.User2 != null)
@@ -49,7 +49,7 @@ public static class Formatter
                 .ReplaceRegex("{user2.tag}", Format.UsernameAndDiscriminator(options.User2, false))
                 .ReplaceRegex("{user2.avatar}", options.User2.GetAvatarUrl())
                 .ReplaceRegex("{user2.mention}", MentionUtils.MentionUser(options.User2.Id))
-                .ReplaceRegex("{user2.age}", DateTimeOffset.UtcNow.Subtract(options.User2.CreatedAt).Humanize(4));
+                .ReplaceRegex("{user2.age}", DateTimeOffset.UtcNow.Subtract(options.User2.CreatedAt).Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second));
         }
 
         if (options.Member != null)
@@ -60,10 +60,10 @@ public static class Formatter
                 .ReplaceRegex("{member.discriminator}", options.Member.Discriminator)
                 .ReplaceRegex("{member.tag}", Format.UsernameAndDiscriminator(options.Member, false))
                 .ReplaceRegex("{member.avatar}", options.Member.GetAvatarUrl())
-                .ReplaceRegex("{member.nick}", options.Member.Nickname)
+                .ReplaceRegex("{member.nick}", options.Member.Nickname ?? Format.UsernameAndDiscriminator(options.Member, false))
                 .ReplaceRegex("{member.mention}", MentionUtils.MentionUser(options.Member.Id))
-                .ReplaceRegex("{member.age}", DateTimeOffset.UtcNow.Subtract(options.Member.CreatedAt).Humanize(4))
-                .ReplaceRegex("{member.joined}", DateTimeOffset.UtcNow.Subtract(options.Member.JoinedAt.GetValueOrDefault()).Humanize(4));
+                .ReplaceRegex("{member.age}", DateTimeOffset.UtcNow.Subtract(options.Member.CreatedAt).Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second))
+                .ReplaceRegex("{member.joined}", DateTimeOffset.UtcNow.Subtract(options.Member.JoinedAt.GetValueOrDefault()).Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second));
         }
 
         if (options.Member2 != null)
@@ -74,10 +74,10 @@ public static class Formatter
                 .ReplaceRegex("{member2.discriminator}", options.Member2.Discriminator)
                 .ReplaceRegex("{member2.tag}", Format.UsernameAndDiscriminator(options.Member2, false))
                 .ReplaceRegex("{member2.avatar}", options.Member2.GetAvatarUrl())
-                .ReplaceRegex("{member2.nick}", options.Member2.Nickname)
+                .ReplaceRegex("{member2.nick}", options.Member2.Nickname ?? Format.UsernameAndDiscriminator(options.Member2, false))
                 .ReplaceRegex("{member2.mention}", MentionUtils.MentionUser(options.Member2.Id))
-                .ReplaceRegex("{member2.age}", DateTimeOffset.UtcNow.Subtract(options.Member2.CreatedAt).Humanize(4))
-                .ReplaceRegex("{member2.joined}", DateTimeOffset.UtcNow.Subtract(options.Member2.JoinedAt.GetValueOrDefault()).Humanize(4));
+                .ReplaceRegex("{member2.age}", DateTimeOffset.UtcNow.Subtract(options.Member2.CreatedAt).Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second))
+                .ReplaceRegex("{member2.joined}", DateTimeOffset.UtcNow.Subtract(options.Member2.JoinedAt.GetValueOrDefault()).Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second));
         }
 
         if (options.Moderator != null)
@@ -88,10 +88,10 @@ public static class Formatter
                 .ReplaceRegex("{moderator.discriminator}", options.Moderator.Discriminator)
                 .ReplaceRegex("{moderator.tag}", Format.UsernameAndDiscriminator(options.Moderator, false))
                 .ReplaceRegex("{moderator.avatar}", options.Moderator.GetAvatarUrl())
-                .ReplaceRegex("{moderator.nick}", options.Moderator.Nickname)
+                .ReplaceRegex("{moderator.nick}", options.Moderator.Nickname ?? Format.UsernameAndDiscriminator(options.Moderator, false))
                 .ReplaceRegex("{moderator.mention}", MentionUtils.MentionUser(options.Moderator.Id))
-                .ReplaceRegex("{moderator.age}", DateTimeOffset.UtcNow.Subtract(options.Moderator.CreatedAt).Humanize(4))
-                .ReplaceRegex("{moderator.joined}", DateTimeOffset.UtcNow.Subtract(options.Moderator.JoinedAt.GetValueOrDefault()).Humanize(4));
+                .ReplaceRegex("{moderator.age}", DateTimeOffset.UtcNow.Subtract(options.Moderator.CreatedAt).Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second))
+                .ReplaceRegex("{moderator.joined}", DateTimeOffset.UtcNow.Subtract(options.Moderator.JoinedAt.GetValueOrDefault()).Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second));
         }
 
         if (options.Channel != null)
@@ -122,7 +122,7 @@ public static class Formatter
             {
                 origContent = options.Message.Attachments.Count > 0 ? $"Uploads:\n{string.Join("\n", options.Message.Attachments)}" : string.Empty;
             }
-            
+
             var editedContent = "";
             if (options.Message.EditedContent is { Length: > 0 })
             {
@@ -134,15 +134,18 @@ public static class Formatter
                 editedContent = options.Message.Attachments.Count > 0 ? $"Uploads:\n{string.Join("\n", options.Message.Attachments)}" : string.Empty;
             }
 
+            if (string.IsNullOrEmpty(origContent)) origContent = "No content";
+            if (string.IsNullOrEmpty(editedContent)) editedContent = "No content";
+
             message = message
                 .ReplaceRegex("{message.id}", options.Message.Id.ToString())
                 .ReplaceRegex("{message.channel.id}", options.Message.ChannelId.ToString())
                 .ReplaceRegex("{message.channel.mention}", MentionUtils.MentionChannel(options.Message.ChannelId))
                 .ReplaceRegex("{message.content}", Format.Code(origContent, string.Empty))
-                .ReplaceRegex("{message.edited}", Format.Code(editedContent, string.Empty));
+                .ReplaceRegex("{message.edited}", Format.Code(editedContent, string.Empty))
+                .ReplaceRegex("{message.link}", $"https://discord.com/channels/{options.Message.GuildId}/{options.Message.ChannelId}/{options.Message.Id}");
         }
-    
-
+        
         if (options.Role != null)
         {
             message = message
@@ -150,7 +153,7 @@ public static class Formatter
                 .ReplaceRegex("{role.name}", options.Role.Name)
                 .ReplaceRegex("{role.mention}", MentionUtils.MentionRole(options.Role.Id));
         }
-        
+
         if (options.Role2 != null)
         {
             message = message
@@ -158,8 +161,8 @@ public static class Formatter
                 .ReplaceRegex("{role2.name}", options.Role2.Name)
                 .ReplaceRegex("{role2.mention}", MentionUtils.MentionRole(options.Role2.Id));
         }
-        
-        if (options.Reason != null) message = message.ReplaceRegex("{reason}", options.Reason); 
+
+        if (options.Reason != null) message = message.ReplaceRegex("{reason}", options.Reason);
 
         return message;
     }

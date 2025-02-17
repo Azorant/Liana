@@ -121,7 +121,7 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
         Task.Run(async () =>
         {
             if (socketChannel is not SocketGuildChannel channel) return;
-            await auditLogService.SendAuditLog(channel.Guild.Id, channel.Id, AuditEventEnum.ChannelCreate, new FormatLogOptions
+            await auditLogService.SendAuditLog(channel.Guild, channel, AuditEventEnum.ChannelCreate, new FormatLogOptions
             {
                 Channel = channel,
             });
@@ -137,7 +137,7 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
         Task.Run(async () =>
         {
             if (oldSocketChannel is not SocketGuildChannel oldChannel || newSocketChannel is not SocketGuildChannel newChannel) return;
-            await auditLogService.SendAuditLog(oldChannel.Guild.Id, oldChannel.Id, AuditEventEnum.ChannelUpdate, new FormatLogOptions
+            await auditLogService.SendAuditLog(oldChannel.Guild, oldChannel, AuditEventEnum.ChannelUpdate, new FormatLogOptions
             {
                 Channel = oldChannel,
                 Channel2 = newChannel
@@ -154,7 +154,7 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
         Task.Run(async () =>
         {
             if (socketChannel is not SocketGuildChannel channel) return;
-            await auditLogService.SendAuditLog(channel.Guild.Id, channel.Id, AuditEventEnum.ChannelDelete, new FormatLogOptions
+            await auditLogService.SendAuditLog(channel.Guild, channel, AuditEventEnum.ChannelDelete, new FormatLogOptions
             {
                 Channel = channel,
             });
@@ -165,7 +165,7 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
         return Task.CompletedTask;
     }
 
-    public Task OnMessageCreate(SocketMessage message)
+    public Task OnMessageCreated(SocketMessage message)
     {
         Task.Run(async () =>
         {
@@ -188,7 +188,7 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
         return Task.CompletedTask;
     }
 
-    public Task OnMessageUpdate(Cacheable<IMessage, ulong> cacheable, SocketMessage socketMessage, ISocketMessageChannel _)
+    public Task OnMessageUpdated(Cacheable<IMessage, ulong> cacheable, SocketMessage socketMessage, ISocketMessageChannel _)
     {
         Task.Run(async () =>
         {
@@ -196,7 +196,6 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
             var message = await db.Messages.FirstOrDefaultAsync(m => m.Id == socketMessage.Id);
             if (message == null)
             {
-                var oldMessage = await cacheable.GetOrDownloadAsync();
                 message = new MessageEntity
                 {
                     Id = socketMessage.Id,
@@ -204,25 +203,25 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
                     ChannelId = channel.Id,
                     AuthorId = socketMessage.Author.Id,
                     AuthorTag = Format.UsernameAndDiscriminator(socketMessage.Author, false),
-                    Content = string.IsNullOrEmpty(oldMessage.Content) ? null : oldMessage.Content,
-                    EditedContent = string.IsNullOrEmpty(socketMessage.Content) ? null : socketMessage.Content,
-                    Attachments = oldMessage.Attachments?.Select(a => a.Url).ToList()
+                    Content = string.IsNullOrEmpty(socketMessage.Content) ? null : socketMessage.Content,
+                    Attachments = socketMessage.Attachments?.Select(a => a.Url).ToList()
                 };
                 await db.AddAsync(message);
-            }
-            else
-            {
-                message.EditedContent = string.IsNullOrEmpty(socketMessage.Content) ? null : socketMessage.Content;
-                db.Update(message);
+                await db.SaveChangesAsync();
+                // Message wasn't cached, so we don't have the original content to send log for
+                return;
             }
 
+            message.EditedContent = string.IsNullOrEmpty(socketMessage.Content) ? null : socketMessage.Content;
+            db.Update(message);
             await db.SaveChangesAsync();
 
-            await auditLogService.SendAuditLog(channel.Guild.Id, channel.Id, AuditEventEnum.MessageUpdate, new FormatLogOptions
+
+            await auditLogService.SendAuditLog(channel.Guild, channel, AuditEventEnum.MessageUpdate, new FormatLogOptions
             {
                 Channel = channel,
                 Message = message,
-                User = socketMessage.Author
+                Member = channel.Guild.GetUser(message.AuthorId)
             });
         }).ContinueWith(t =>
         {
@@ -231,11 +230,12 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
         return Task.CompletedTask;
     }
 
-    public Task OnMessageDelete(Cacheable<IMessage, ulong> cacheableMessage, Cacheable<IMessageChannel, ulong> cacheableChannel)
+    public Task OnMessageDeleted(Cacheable<IMessage, ulong> cacheableMessage, Cacheable<IMessageChannel, ulong> cacheableChannel)
     {
         Task.Run(async () =>
         {
             var message = await db.Messages.FirstOrDefaultAsync(m => m.Id == cacheableMessage.Id);
+            // Message wasn't cached, and we can't really cache it now because it's deleted
             if (message == null) return;
             message.Deleted = true;
             db.Update(message);
@@ -248,11 +248,221 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
                 {
                     Channel = channel,
                     Message = message,
-                    User = channel?.Guild.GetUser(message.AuthorId)
+                    Member = channel?.Guild.GetUser(message.AuthorId)
                 });
         }).ContinueWith(t =>
         {
             if (t.Exception != null) Log.Error(t.Exception, "Error while logging message delete");
+        });
+        return Task.CompletedTask;
+    }
+
+    public Task OnMessageBulkDeleted(IReadOnlyCollection<Cacheable<IMessage, ulong>> cacheableMessages, Cacheable<IMessageChannel, ulong> cacheableChannel)
+    {
+        Task.Run(async () =>
+        {
+            var messages = await db.Messages.Where(m => cacheableMessages.Select(c => c.Id).Contains(m.Id)).ToListAsync();
+            var channel = await cacheableChannel.GetOrDownloadAsync() as SocketGuildChannel;
+            var member = channel?.Guild.GetUser(messages.First().AuthorId);
+            foreach (var message in messages)
+            {
+                message.Deleted = true;
+                db.Update(message);
+                await auditLogService.SendAuditLog(message.GuildId, message.ChannelId, AuditEventEnum.MessageDelete,
+                    new FormatLogOptions
+                    {
+                        Channel = channel,
+                        Message = message,
+                        Member = member
+                    });
+            }
+
+            await db.SaveChangesAsync();
+        }).ContinueWith(t =>
+        {
+            if (t.Exception != null) Log.Error(t.Exception, "Error while logging message bulk delete");
+        });
+        return Task.CompletedTask;
+    }
+
+    public Task OnVoiceStateUpdated(SocketUser socketUser, SocketVoiceState oldState, SocketVoiceState newState)
+    {
+        Task.Run(async () =>
+        {
+            if (oldState.VoiceChannel == null && newState.VoiceChannel != null)
+            {
+                await auditLogService.SendAuditLog(newState.VoiceChannel.Guild, newState.VoiceChannel, AuditEventEnum.VoiceChannelJoin,
+                    new FormatLogOptions
+                    {
+                        Channel = newState.VoiceChannel,
+                        Member = newState.VoiceChannel.Guild.GetUser(socketUser.Id)
+                    });
+            }
+            else if (oldState.VoiceChannel != null && newState.VoiceChannel == null)
+            {
+                await auditLogService.SendAuditLog(oldState.VoiceChannel.Guild, oldState.VoiceChannel, AuditEventEnum.VoiceChannelLeave,
+                    new FormatLogOptions
+                    {
+                        Channel = oldState.VoiceChannel,
+                        Member = oldState.VoiceChannel.Guild.GetUser(socketUser.Id)
+                    });
+            }
+            else if (oldState.VoiceChannel != null && newState.VoiceChannel != null)
+            {
+                await auditLogService.SendAuditLog(oldState.VoiceChannel.Guild, oldState.VoiceChannel, AuditEventEnum.VoiceChannelSwitch,
+                    new FormatLogOptions
+                    {
+                        Channel = oldState.VoiceChannel,
+                        Channel2 = newState.VoiceChannel,
+                        Member = newState.VoiceChannel.Guild.GetUser(socketUser.Id)
+                    });
+            }
+        }).ContinueWith(t =>
+        {
+            if (t.Exception != null) Log.Error(t.Exception, "Error while logging voice state update");
+        });
+        return Task.CompletedTask;
+    }
+
+    public Task OnMemberJoined(SocketGuildUser socketUser)
+    {
+        Task.Run(async () =>
+        {
+            await auditLogService.SendAuditLog(socketUser.Guild, AuditEventEnum.MemberAdd, new FormatLogOptions
+            {
+                Guild = socketUser.Guild,
+                Member = socketUser
+            });
+        }).ContinueWith(t =>
+        {
+            if (t.Exception != null) Log.Error(t.Exception, "Error while logging member join");
+        });
+        return Task.CompletedTask;
+    }
+
+    public Task OnMemberLeft(SocketGuild socketGuild, SocketUser socketUser)
+    {
+        Task.Run(async () =>
+        {
+            await auditLogService.SendAuditLog(socketGuild, AuditEventEnum.MemberRemove, new FormatLogOptions
+            {
+                Guild = socketGuild,
+                User = socketUser
+            });
+        }).ContinueWith(t =>
+        {
+            if (t.Exception != null) Log.Error(t.Exception, "Error while logging member leave");
+        });
+        return Task.CompletedTask;
+    }
+    
+    public Task OnMemberUpdated(Cacheable<SocketGuildUser, ulong> cachedMember, SocketGuildUser updatedMember)
+    {
+        Task.Run(async () =>
+        {
+            var oldMember = cachedMember.Value;
+
+            if (oldMember.Nickname == null && updatedMember.Nickname != null)
+            {
+                await auditLogService.SendAuditLog(updatedMember.Guild, AuditEventEnum.NicknameAdd, new FormatLogOptions
+                {
+                    Guild = updatedMember.Guild,
+                    Member = updatedMember
+                });
+            }
+            else if (updatedMember.Nickname == null && oldMember.Nickname != null)
+            {
+                await auditLogService.SendAuditLog(updatedMember.Guild, AuditEventEnum.NicknameRemove, new FormatLogOptions
+                {
+                    Guild = updatedMember.Guild,
+                    Member = oldMember
+                });
+            }
+            else if (updatedMember.Nickname != oldMember.Nickname)
+            {
+                await auditLogService.SendAuditLog(updatedMember.Guild, AuditEventEnum.NicknameUpdate, new FormatLogOptions
+                {
+                    Guild = updatedMember.Guild,
+                    Member = oldMember,
+                    Member2 = updatedMember
+                });
+            }
+
+            var removedRoles = oldMember.Roles.Except(updatedMember.Roles).ToList();
+            var addedRoles = updatedMember.Roles.Except(oldMember.Roles).ToList();
+
+            foreach (var role in removedRoles)
+            {
+                await auditLogService.SendAuditLog(updatedMember.Guild, AuditEventEnum.MemberRoleRemove, new FormatLogOptions
+                {
+                    Guild = updatedMember.Guild,
+                    Member = updatedMember,
+                    Role = role
+                });
+            }
+
+            foreach (var role in addedRoles)
+            {
+                await auditLogService.SendAuditLog(updatedMember.Guild, AuditEventEnum.MemberRoleAdd, new FormatLogOptions
+                {
+                    Guild = updatedMember.Guild,
+                    Member = updatedMember,
+                    Role = role
+                });
+            }
+        }).ContinueWith(t =>
+        {
+            if (t.Exception != null) Log.Error(t.Exception, "Error while logging member update");
+        });
+        return Task.CompletedTask;
+    }
+    
+    public Task OnRoleCreated(SocketRole role)
+    {
+        Task.Run(async () =>
+        {
+            await auditLogService.SendAuditLog(role.Guild, AuditEventEnum.RoleCreate, new FormatLogOptions
+            {
+                Guild = role.Guild,
+                Role = role
+            });
+        }).ContinueWith(t =>
+        {
+            if (t.Exception != null) Log.Error(t.Exception, "Error while logging role create");
+        });
+        return Task.CompletedTask;
+    }
+    
+    public Task OnRoleUpdated(SocketRole oldRole, SocketRole newRole)
+    {
+        Task.Run(async () =>
+        {
+            if (oldRole.Name == newRole.Name) return; // Maybe log other updates in future
+            await auditLogService.SendAuditLog(newRole.Guild, AuditEventEnum.RoleUpdate, new FormatLogOptions
+            {
+                Guild = newRole.Guild,
+                Role = oldRole,
+                Role2 = newRole
+            });
+        }).ContinueWith(t =>
+        {
+            if (t.Exception != null) Log.Error(t.Exception, "Error while logging role update");
+        });
+        return Task.CompletedTask;
+    }
+    
+    public Task OnRoleDeleted(SocketRole role)
+    {
+        Task.Run(async () =>
+        {
+            await auditLogService.SendAuditLog(role.Guild, AuditEventEnum.RoleDelete, new FormatLogOptions
+            {
+                Guild = role.Guild,
+                Role = role
+            });
+        }).ContinueWith(t =>
+        {
+            if (t.Exception != null) Log.Error(t.Exception, "Error while logging role remove");
         });
         return Task.CompletedTask;
     }
