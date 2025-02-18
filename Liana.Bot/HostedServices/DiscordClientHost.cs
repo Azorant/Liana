@@ -14,8 +14,9 @@ internal sealed class DiscordClientHost : IHostedService
     private readonly DiscordSocketClient client;
     private readonly InteractionService interactionService;
     private readonly IServiceProvider serviceProvider;
-    private readonly AuditLogEvents auditLogEvents;
-    private readonly GuildRoleEvents guildRoleEvents;
+    private readonly AuditEvents auditEvents;
+    private readonly RoleEvents roleEvents;
+    private readonly MessagingEvents messagingEvents;
 
     public DiscordClientHost(
         DiscordSocketClient client,
@@ -29,8 +30,9 @@ internal sealed class DiscordClientHost : IHostedService
         this.client = client;
         this.interactionService = interactionService;
         this.serviceProvider = serviceProvider;
-        auditLogEvents = new AuditLogEvents(serviceProvider);
-        guildRoleEvents = new GuildRoleEvents(serviceProvider);
+        auditEvents = new AuditEvents(serviceProvider);
+        roleEvents = new RoleEvents(serviceProvider);
+        messagingEvents = new MessagingEvents(serviceProvider);
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -38,34 +40,39 @@ internal sealed class DiscordClientHost : IHostedService
         client.InteractionCreated += InteractionCreated;
         client.Ready += ClientReady;
         client.Log += LogAsync;
-        client.JoinedGuild += auditLogEvents.OnGuildJoined;
-        client.LeftGuild += auditLogEvents.OnGuildLeft;
-        client.Ready += auditLogEvents.OnClientReady;
-        client.Disconnected += auditLogEvents.OnClientDisconnected;
+        client.JoinedGuild += auditEvents.OnGuildJoined;
+        client.LeftGuild += auditEvents.OnGuildLeft;
+        client.Ready += auditEvents.OnClientReady;
+        client.Disconnected += auditEvents.OnClientDisconnected;
         interactionService.Log += LogAsync;
         interactionService.SlashCommandExecuted += SlashCommandExecuted;
 
         #region audit log events
-        client.ChannelCreated += auditLogEvents.OnChannelCreated;
-        client.ChannelUpdated += auditLogEvents.OnChannelUpdated;
-        client.ChannelDestroyed += auditLogEvents.OnChannelDeleted;
-        client.MessageReceived += auditLogEvents.OnMessageCreated;
-        client.MessageUpdated += auditLogEvents.OnMessageUpdated;
-        client.MessageDeleted += auditLogEvents.OnMessageDeleted;
-        client.MessagesBulkDeleted += auditLogEvents.OnMessageBulkDeleted;
-        client.UserVoiceStateUpdated += auditLogEvents.OnVoiceStateUpdated;
-        client.UserJoined += auditLogEvents.OnMemberJoined;
-        client.UserLeft += auditLogEvents.OnMemberLeft;
-        client.GuildMemberUpdated += auditLogEvents.OnMemberUpdated;
-        client.RoleCreated += auditLogEvents.OnRoleCreated;
-        client.RoleUpdated += auditLogEvents.OnRoleUpdated;
-        client.RoleDeleted += auditLogEvents.OnRoleDeleted;
-        client.UserUpdated += auditLogEvents.OnUserUpdated;
+        client.ChannelCreated += auditEvents.OnChannelCreated;
+        client.ChannelUpdated += auditEvents.OnChannelUpdated;
+        client.ChannelDestroyed += auditEvents.OnChannelDeleted;
+        client.MessageReceived += auditEvents.OnMessageCreated;
+        client.MessageUpdated += auditEvents.OnMessageUpdated;
+        client.MessageDeleted += auditEvents.OnMessageDeleted;
+        client.MessagesBulkDeleted += auditEvents.OnMessageBulkDeleted;
+        client.UserVoiceStateUpdated += auditEvents.OnVoiceStateUpdated;
+        client.UserJoined += auditEvents.OnMemberJoined;
+        client.UserLeft += auditEvents.OnMemberLeft;
+        client.GuildMemberUpdated += auditEvents.OnMemberUpdated;
+        client.RoleCreated += auditEvents.OnRoleCreated;
+        client.RoleUpdated += auditEvents.OnRoleUpdated;
+        client.RoleDeleted += auditEvents.OnRoleDeleted;
+        client.UserUpdated += auditEvents.OnUserUpdated;
         #endregion
         
         #region guild role events
-        client.UserJoined += guildRoleEvents.OnMemberJoined;
-        client.GuildMemberUpdated += guildRoleEvents.OnMemberUpdated;
+        client.UserJoined += roleEvents.OnMemberJoined;
+        client.GuildMemberUpdated += roleEvents.OnMemberUpdated;
+        #endregion
+        
+        #region messaging events
+        client.UserJoined += messagingEvents.OnMemberJoined;
+        client.UserLeft += messagingEvents.OnMemberLeft;
         #endregion
 
         await client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("TOKEN"));
@@ -77,33 +84,38 @@ internal sealed class DiscordClientHost : IHostedService
         client.InteractionCreated -= InteractionCreated;
         client.Ready -= ClientReady;
         client.Log -= LogAsync;
-        client.JoinedGuild -= auditLogEvents.OnGuildJoined;
-        client.LeftGuild -= auditLogEvents.OnGuildLeft;
-        client.Ready -= auditLogEvents.OnClientReady;
-        client.Disconnected -= auditLogEvents.OnClientDisconnected;
+        client.JoinedGuild -= auditEvents.OnGuildJoined;
+        client.LeftGuild -= auditEvents.OnGuildLeft;
+        client.Ready -= auditEvents.OnClientReady;
+        client.Disconnected -= auditEvents.OnClientDisconnected;
         interactionService.Log -= LogAsync;
         interactionService.SlashCommandExecuted -= SlashCommandExecuted;
 
         #region audit log events
-        client.ChannelCreated -= auditLogEvents.OnChannelCreated;
-        client.ChannelUpdated -= auditLogEvents.OnChannelUpdated;
-        client.ChannelDestroyed -= auditLogEvents.OnChannelDeleted;
-        client.MessageReceived -= auditLogEvents.OnMessageCreated;
-        client.MessageDeleted -= auditLogEvents.OnMessageDeleted;
-        client.MessagesBulkDeleted -= auditLogEvents.OnMessageBulkDeleted;
-        client.UserVoiceStateUpdated -= auditLogEvents.OnVoiceStateUpdated;
-        client.UserJoined -= auditLogEvents.OnMemberJoined;
-        client.UserLeft -= auditLogEvents.OnMemberLeft;
-        client.GuildMemberUpdated -= auditLogEvents.OnMemberUpdated;
-        client.RoleCreated -= auditLogEvents.OnRoleCreated;
-        client.RoleUpdated -= auditLogEvents.OnRoleUpdated;
-        client.RoleDeleted -= auditLogEvents.OnRoleDeleted;
-        client.UserUpdated -= auditLogEvents.OnUserUpdated;
+        client.ChannelCreated -= auditEvents.OnChannelCreated;
+        client.ChannelUpdated -= auditEvents.OnChannelUpdated;
+        client.ChannelDestroyed -= auditEvents.OnChannelDeleted;
+        client.MessageReceived -= auditEvents.OnMessageCreated;
+        client.MessageDeleted -= auditEvents.OnMessageDeleted;
+        client.MessagesBulkDeleted -= auditEvents.OnMessageBulkDeleted;
+        client.UserVoiceStateUpdated -= auditEvents.OnVoiceStateUpdated;
+        client.UserJoined -= auditEvents.OnMemberJoined;
+        client.UserLeft -= auditEvents.OnMemberLeft;
+        client.GuildMemberUpdated -= auditEvents.OnMemberUpdated;
+        client.RoleCreated -= auditEvents.OnRoleCreated;
+        client.RoleUpdated -= auditEvents.OnRoleUpdated;
+        client.RoleDeleted -= auditEvents.OnRoleDeleted;
+        client.UserUpdated -= auditEvents.OnUserUpdated;
         #endregion
 
         #region guild role events
-        client.UserJoined -= guildRoleEvents.OnMemberJoined;
-        client.GuildMemberUpdated -= guildRoleEvents.OnMemberUpdated;
+        client.UserJoined -= roleEvents.OnMemberJoined;
+        client.GuildMemberUpdated -= roleEvents.OnMemberUpdated;
+        #endregion
+        
+        #region messaging events
+        client.UserJoined -= messagingEvents.OnMemberJoined;
+        client.UserLeft -= messagingEvents.OnMemberLeft;
         #endregion
         
         await client.StopAsync();

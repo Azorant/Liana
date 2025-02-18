@@ -1,4 +1,4 @@
-﻿using Discord;
+using Discord;
 using Discord.WebSocket;
 using Liana.Bot.Services;
 using Liana.Database;
@@ -11,7 +11,7 @@ using Serilog;
 
 namespace Liana.Bot.Events;
 
-public class AuditLogEvents(IServiceProvider serviceProvider)
+public class AuditEvents(IServiceProvider serviceProvider)
 {
     private readonly DiscordSocketClient client = serviceProvider.GetRequiredService<DiscordSocketClient>();
 
@@ -184,7 +184,7 @@ public class AuditLogEvents(IServiceProvider serviceProvider)
                 AuthorId = message.Author.Id,
                 AuthorTag = Format.UsernameAndDiscriminator(message.Author, false),
                 Content = string.IsNullOrEmpty(message.Content) ? null : message.Content,
-                Attachments = message.Attachments?.Select(a => a.Url).ToList()
+                Attachments = message.Attachments?.Select(a => a.Url).ToList() ?? []
             });
             await db.SaveChangesAsync();
         }).ContinueWith(t =>

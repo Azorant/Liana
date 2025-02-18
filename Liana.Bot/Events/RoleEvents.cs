@@ -1,4 +1,6 @@
 ﻿using Discord;
+using Discord.Net;
+using Discord.Rest;
 using Discord.WebSocket;
 using Liana.Database;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,7 +12,7 @@ namespace Liana.Bot.Events;
 /// Handle member joins and reaction/button roles
 /// </summary>
 /// <param name="serviceProvider"></param>
-public class GuildRoleEvents(IServiceProvider serviceProvider)
+public class RoleEvents(IServiceProvider serviceProvider)
 {
     public Task OnMemberJoined(SocketGuildUser socketUser)
     {
@@ -19,6 +21,7 @@ public class GuildRoleEvents(IServiceProvider serviceProvider)
             var db = serviceProvider.GetRequiredService<DatabaseContext>();
             var config = await db.GetConfig(socketUser.Guild.Id);
             var guild = socketUser.Guild;
+
             if (config.Autorole == null || !guild.CurrentUser.GuildPermissions.ManageRoles) return;
 
             var maxPosition = guild.CurrentUser.Roles.Max(r => r.Position);
@@ -68,6 +71,7 @@ public class GuildRoleEvents(IServiceProvider serviceProvider)
         });
         return Task.CompletedTask;
     }
+
     public Task OnMemberUpdated(Cacheable<SocketGuildUser, ulong> cachedMember, SocketGuildUser updatedMember)
     {
         Task.Run(async () =>

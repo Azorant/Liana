@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using Discord;
 using Discord.Interactions;
+using Discord.Rest;
 using Liana.Bot.HostedServices;
 
 namespace Liana.Bot.Modules;
@@ -33,4 +34,10 @@ public class MiscModule() : InteractionModuleBase<SocketInteractionContext>
     public async Task InviteCommand()
         => await RespondAsync(
             $"https://discord.com/api/oauth2/authorize?client_id={Context.Client.CurrentUser.Id}&scope=bot%20applications.commands");
+
+    [SlashCommand("test", "test")]
+    public async Task TestCommand()
+    {
+        await RespondAsync(new EmbedBuilder().WithTitle("test").WithImageUrl("https://cdn.carbon.pics/ranch.png").ToJsonString());
+    }
 }
