@@ -4,15 +4,17 @@ using Liana.Bot.Services;
 using Liana.Database;
 using Liana.Database.Entities;
 using Liana.Models;
-using Liana.Models.Constants;
 using Liana.Models.Enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
-namespace Liana.Bot;
+namespace Liana.Bot.Events;
 
-public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogService auditLogService)
+public class AuditLogEvents(IServiceProvider serviceProvider)
 {
+    private readonly DiscordSocketClient client = serviceProvider.GetRequiredService<DiscordSocketClient>();
+
     public Task OnGuildJoined(SocketGuild guild)
     {
         Task.Run(async () =>
@@ -69,7 +71,7 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
         {
             if (!ulong.TryParse(Environment.GetEnvironmentVariable("LOG_CHANNEL"), out var channelId)) return;
             if (client.GetChannel(channelId) is not SocketTextChannel channel || channel.GetChannelType() != ChannelType.Text) return;
-
+            var db = serviceProvider.GetRequiredService<DatabaseContext>();
             var existingGuilds = await db.Guilds.Select(g => g.Id).ToListAsync();
             foreach (var guild in client.Guilds)
             {
@@ -121,6 +123,7 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
         Task.Run(async () =>
         {
             if (socketChannel is not SocketGuildChannel channel) return;
+            var auditLogService = serviceProvider.GetRequiredService<AuditLogService>();
             await auditLogService.SendAuditLog(channel.Guild, channel, AuditEventEnum.ChannelCreate, new FormatLogOptions
             {
                 Channel = channel,
@@ -137,6 +140,7 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
         Task.Run(async () =>
         {
             if (oldSocketChannel is not SocketGuildChannel oldChannel || newSocketChannel is not SocketGuildChannel newChannel) return;
+            var auditLogService = serviceProvider.GetRequiredService<AuditLogService>();
             await auditLogService.SendAuditLog(oldChannel.Guild, oldChannel, AuditEventEnum.ChannelUpdate, new FormatLogOptions
             {
                 Channel = oldChannel,
@@ -154,6 +158,7 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
         Task.Run(async () =>
         {
             if (socketChannel is not SocketGuildChannel channel) return;
+            var auditLogService = serviceProvider.GetRequiredService<AuditLogService>();
             await auditLogService.SendAuditLog(channel.Guild, channel, AuditEventEnum.ChannelDelete, new FormatLogOptions
             {
                 Channel = channel,
@@ -170,6 +175,7 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
         Task.Run(async () =>
         {
             if (message.Channel is not SocketGuildChannel channel || message.Author.Id == client.CurrentUser.Id) return;
+            var db = serviceProvider.GetRequiredService<DatabaseContext>();
             await db.AddAsync(new MessageEntity
             {
                 Id = message.Id,
@@ -193,6 +199,7 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
         Task.Run(async () =>
         {
             if (socketMessage.Channel is not SocketGuildChannel channel) return;
+            var db = serviceProvider.GetRequiredService<DatabaseContext>();
             var message = await db.Messages.FirstOrDefaultAsync(m => m.Id == socketMessage.Id);
             if (message == null)
             {
@@ -217,6 +224,7 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
             await db.SaveChangesAsync();
 
 
+            var auditLogService = serviceProvider.GetRequiredService<AuditLogService>();
             await auditLogService.SendAuditLog(channel.Guild, channel, AuditEventEnum.MessageUpdate, new FormatLogOptions
             {
                 Channel = channel,
@@ -234,6 +242,7 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
     {
         Task.Run(async () =>
         {
+            var db = serviceProvider.GetRequiredService<DatabaseContext>();
             var message = await db.Messages.FirstOrDefaultAsync(m => m.Id == cacheableMessage.Id);
             // Message wasn't cached, and we can't really cache it now because it's deleted
             if (message == null) return;
@@ -243,6 +252,7 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
 
             var channel = await cacheableChannel.GetOrDownloadAsync() as SocketGuildChannel;
 
+            var auditLogService = serviceProvider.GetRequiredService<AuditLogService>();
             await auditLogService.SendAuditLog(message.GuildId, message.ChannelId, AuditEventEnum.MessageDelete,
                 new FormatLogOptions
                 {
@@ -261,9 +271,11 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
     {
         Task.Run(async () =>
         {
+            var db = serviceProvider.GetRequiredService<DatabaseContext>();
             var messages = await db.Messages.Where(m => cacheableMessages.Select(c => c.Id).Contains(m.Id)).ToListAsync();
             var channel = await cacheableChannel.GetOrDownloadAsync() as SocketGuildChannel;
             var member = channel?.Guild.GetUser(messages.First().AuthorId);
+            var auditLogService = serviceProvider.GetRequiredService<AuditLogService>();
             foreach (var message in messages)
             {
                 message.Deleted = true;
@@ -289,6 +301,7 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
     {
         Task.Run(async () =>
         {
+            var auditLogService = serviceProvider.GetRequiredService<AuditLogService>();
             if (oldState.VoiceChannel == null && newState.VoiceChannel != null)
             {
                 await auditLogService.SendAuditLog(newState.VoiceChannel.Guild, newState.VoiceChannel, AuditEventEnum.VoiceChannelJoin,
@@ -328,6 +341,7 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
     {
         Task.Run(async () =>
         {
+            var auditLogService = serviceProvider.GetRequiredService<AuditLogService>();
             await auditLogService.SendAuditLog(socketUser.Guild, AuditEventEnum.MemberAdd, new FormatLogOptions
             {
                 Guild = socketUser.Guild,
@@ -344,6 +358,7 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
     {
         Task.Run(async () =>
         {
+            var auditLogService = serviceProvider.GetRequiredService<AuditLogService>();
             await auditLogService.SendAuditLog(socketGuild, AuditEventEnum.MemberRemove, new FormatLogOptions
             {
                 Guild = socketGuild,
@@ -355,13 +370,14 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
         });
         return Task.CompletedTask;
     }
-    
+
     public Task OnMemberUpdated(Cacheable<SocketGuildUser, ulong> cachedMember, SocketGuildUser updatedMember)
     {
         Task.Run(async () =>
         {
             var oldMember = cachedMember.Value;
 
+            var auditLogService = serviceProvider.GetRequiredService<AuditLogService>();
             if (oldMember.Nickname == null && updatedMember.Nickname != null)
             {
                 await auditLogService.SendAuditLog(updatedMember.Guild, AuditEventEnum.NicknameAdd, new FormatLogOptions
@@ -416,11 +432,12 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
         });
         return Task.CompletedTask;
     }
-    
+
     public Task OnRoleCreated(SocketRole role)
     {
         Task.Run(async () =>
         {
+            var auditLogService = serviceProvider.GetRequiredService<AuditLogService>();
             await auditLogService.SendAuditLog(role.Guild, AuditEventEnum.RoleCreate, new FormatLogOptions
             {
                 Guild = role.Guild,
@@ -432,12 +449,13 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
         });
         return Task.CompletedTask;
     }
-    
+
     public Task OnRoleUpdated(SocketRole oldRole, SocketRole newRole)
     {
         Task.Run(async () =>
         {
             if (oldRole.Name == newRole.Name) return; // Maybe log other updates in future
+            var auditLogService = serviceProvider.GetRequiredService<AuditLogService>();
             await auditLogService.SendAuditLog(newRole.Guild, AuditEventEnum.RoleUpdate, new FormatLogOptions
             {
                 Guild = newRole.Guild,
@@ -450,11 +468,12 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
         });
         return Task.CompletedTask;
     }
-    
+
     public Task OnRoleDeleted(SocketRole role)
     {
         Task.Run(async () =>
         {
+            var auditLogService = serviceProvider.GetRequiredService<AuditLogService>();
             await auditLogService.SendAuditLog(role.Guild, AuditEventEnum.RoleDelete, new FormatLogOptions
             {
                 Guild = role.Guild,
@@ -463,6 +482,29 @@ public class Events(DiscordSocketClient client, DatabaseContext db, AuditLogServ
         }).ContinueWith(t =>
         {
             if (t.Exception != null) Log.Error(t.Exception, "Error while logging role remove");
+        });
+        return Task.CompletedTask;
+    }
+
+    public Task OnUserUpdated(SocketUser oldUser, SocketUser newUser)
+    {
+        Task.Run(async () =>
+        {
+            if (Format.UsernameAndDiscriminator(oldUser, false) == Format.UsernameAndDiscriminator(newUser, false)) return;
+
+            var guilds = client.Guilds.Where(g => g.Users.Select(u => u.Id).Contains(newUser.Id));
+            foreach (var guild in guilds)
+            {
+                var auditLogService = serviceProvider.GetRequiredService<AuditLogService>();
+                await auditLogService.SendAuditLog(guild, AuditEventEnum.UsernameChange, new FormatLogOptions
+                {
+                    User = oldUser,
+                    User2 = newUser,
+                });
+            }
+        }).ContinueWith(t =>
+        {
+            if (t.Exception != null) Log.Error(t.Exception, "Error while logging user updated");
         });
         return Task.CompletedTask;
     }

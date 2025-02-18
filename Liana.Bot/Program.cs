@@ -22,7 +22,7 @@ try
     var builder = new HostApplicationBuilder();
 
     builder.Services
-        .AddDbContext<DatabaseContext>(options => DatabaseContextFactory.CreateDbOptions(options))
+        .AddDbContext<DatabaseContext>(options => DatabaseContextFactory.CreateDbOptions(options), ServiceLifetime.Transient)
         .AddSingleton(new InteractiveConfig { ReturnAfterSendingPaginator = true })
         .AddSingleton<InteractiveService>()
         .AddSingleton(new DiscordSocketConfig
@@ -32,7 +32,6 @@ try
         })
         .AddSingleton<DiscordSocketClient>()
         .AddSingleton<InteractionService>(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>()))
-        .AddSingleton<Events>()
         .AddTransient<AuditLogService>()
         .AddHostedService<DiscordClientHost>()
         .AddHostedService<ClientStatus>()

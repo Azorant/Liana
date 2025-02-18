@@ -1,4 +1,5 @@
 ﻿using Liana.Database.Entities;
+using Liana.Models;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -8,6 +9,37 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : DbCont
 {
     public DbSet<GuildEntity> Guilds { get; set; }
     public DbSet<MessageEntity> Messages { get; set; }
+    public DbSet<GuildMemberEntity> GuildMembers { get; set; }
+
+    public async Task<GuildConfig> GetConfig(ulong guildId)
+    {
+        var record = await Guilds.FirstOrDefaultAsync(g => g.Id == guildId);
+        if (record != null)
+            return record.Config;
+
+        record = new GuildEntity
+        {
+            Id = guildId,
+            Config = new GuildConfig()
+        };
+        await AddAsync(record);
+        await SaveChangesAsync();
+        return record.Config;
+    }
+
+    public async Task<GuildMemberEntity> GetMember(ulong guildId, ulong userId)
+    {
+        var record = await GuildMembers.FirstOrDefaultAsync(m => m.Id == userId && m.GuildId == guildId);
+        if (record != null) return record;
+        record = new GuildMemberEntity
+        {
+            Id = userId,
+            GuildId = guildId,
+        };
+        await AddAsync(record);
+        await SaveChangesAsync();
+        return record;
+    }
 
     public void ApplyMigrations()
     {

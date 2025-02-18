@@ -11,22 +11,8 @@ namespace Liana.Bot.Modules;
 [CommandContextType(InteractionContextType.Guild), IntegrationType(ApplicationIntegrationType.GuildInstall)]
 public class BaseModule(DatabaseContext db) : InteractionModuleBase<SocketInteractionContext>
 {
-    protected async Task<GuildConfig> GetConfigAsync()
-    {
-        var record = await db.Guilds.FirstOrDefaultAsync(g => g.Id == Context.Guild.Id);
-        if (record != null)
-            return record.Config;
-        
-        record = new GuildEntity
-        {
-            Id = Context.Guild.Id,
-            Config = new GuildConfig()
-        };
-        await db.AddAsync(record);
-        await db.SaveChangesAsync();
-        return record.Config;
-    }
-
+    protected Task<GuildConfig> GetConfigAsync() => db.GetConfig(Context.Guild.Id);
+    
     /// <summary>
     /// Check if user has config role
     /// </summary>
@@ -37,7 +23,7 @@ public class BaseModule(DatabaseContext db) : InteractionModuleBase<SocketIntera
     {
         if (Context.Guild.OwnerId == Context.User.Id) return true;
         if (config.Roles == null) return false;
-        var roles = Context.Guild.GetUser(Context.User.Id).Roles.Select(r=>r.Id).ToList();
+        var roles = Context.Guild.GetUser(Context.User.Id).Roles.Select(r => r.Id).ToList();
         return config.Roles.Where(s => s.Value == permission).Any(role => roles.Contains(role.Key));
     }
 
@@ -58,7 +44,7 @@ public class BaseModule(DatabaseContext db) : InteractionModuleBase<SocketIntera
             await RespondAsync(embed: embed);
         }
     }
-    
+
     protected async Task SendSuccessAsync(string description)
     {
         var embed = new EmbedBuilder()

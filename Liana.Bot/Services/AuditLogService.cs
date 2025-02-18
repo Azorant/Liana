@@ -4,6 +4,7 @@ using Liana.Database;
 using Liana.Models.Constants;
 using Liana.Models.Enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Liana.Bot.Services;
 
@@ -11,7 +12,7 @@ public class AuditLogService(DatabaseContext db, DiscordSocketClient client)
 {
     public async Task SendAuditLog(ulong guildId, ulong? channelId, AuditEventEnum auditEvent, FormatLogOptions options)
     {
-        var guild = await db.Guilds.AsNoTracking().FirstOrDefaultAsync(g => g.Id == guildId);
+        var guild = await db.Guilds.FirstOrDefaultAsync(g => g.Id == guildId);
         if (guild?.Config.AuditLogs == null ||
             guild.Config.AuditLogs.Count == 0) return;
 
