@@ -320,7 +320,7 @@ public class AuditLogEvents(IServiceProvider serviceProvider)
                         Member = oldState.VoiceChannel.Guild.GetUser(socketUser.Id)
                     });
             }
-            else if (oldState.VoiceChannel != null && newState.VoiceChannel != null)
+            else if (oldState.VoiceChannel != null && newState.VoiceChannel != null && oldState.VoiceChannel.Id != newState.VoiceChannel.Id)
             {
                 await auditLogService.SendAuditLog(oldState.VoiceChannel.Guild, oldState.VoiceChannel, AuditEventEnum.VoiceChannelSwitch,
                     new FormatLogOptions
