@@ -18,6 +18,6 @@ public class MessageEntity
     public string? Content { get; set; }
     [MaxLength(4000)]
     public string? EditedContent { get; set; }
-    public List<string>? Attachments { get; set; }
+    public List<string> Attachments { get; set; } = new();
     public bool Deleted { get; set; }
 }

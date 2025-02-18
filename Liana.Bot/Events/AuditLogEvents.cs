@@ -211,7 +211,7 @@ public class AuditLogEvents(IServiceProvider serviceProvider)
                     AuthorId = socketMessage.Author.Id,
                     AuthorTag = Format.UsernameAndDiscriminator(socketMessage.Author, false),
                     Content = string.IsNullOrEmpty(socketMessage.Content) ? null : socketMessage.Content,
-                    Attachments = socketMessage.Attachments?.Select(a => a.Url).ToList()
+                    Attachments = socketMessage.Attachments?.Select(a => a.Url).ToList() ?? []
                 };
                 await db.AddAsync(message);
                 await db.SaveChangesAsync();
@@ -223,6 +223,8 @@ public class AuditLogEvents(IServiceProvider serviceProvider)
             db.Update(message);
             await db.SaveChangesAsync();
 
+            // Probably interaction message
+            if (message.Content == null && message.EditedContent == null && message.Attachments.Count == 0) return;
 
             var auditLogService = serviceProvider.GetRequiredService<AuditLogService>();
             await auditLogService.SendAuditLog(channel.Guild, channel, AuditEventEnum.MessageUpdate, new FormatLogOptions

@@ -7,7 +7,7 @@ namespace Liana.Bot.HostedServices;
 internal sealed class ClientStatus(DiscordSocketClient client) : IHostedService, IDisposable
 {
     private int lastStatus;
-    private readonly string[] statuses = ["/help", "eris.gg"];
+    private readonly string[] statuses = ["/config", "eris.gg"];
     private Timer? timer;
 
     public void Dispose()
