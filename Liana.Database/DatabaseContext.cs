@@ -1,4 +1,4 @@
-﻿using Liana.Database.Entities;
+using Liana.Database.Entities;
 using Liana.Models;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -41,13 +41,13 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : DbCont
         return record;
     }
 
-    public void ApplyMigrations()
+    public async Task ApplyMigrations()
     {
-        var pending = Database.GetPendingMigrations().ToList();
+        var pending = (await Database.GetPendingMigrationsAsync()).ToList();
         if (pending.Any())
         {
-            Log.Information($"Applying {pending.Count} migrations: {string.Join(',', pending)}");
-            Database.Migrate();
+            Log.Information($"Applying {pending.Count} migrations: {string.Join(", ", pending)}");
+            await Database.MigrateAsync();
             Log.Information("Migrations applied");
         }
         else

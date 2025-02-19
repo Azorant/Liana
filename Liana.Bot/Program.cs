@@ -42,7 +42,7 @@ try
     using (var scope = host.Services.CreateScope())
     {
         var db = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
-        db.ApplyMigrations();
+        await db.ApplyMigrations();
     }
 
     host.Run();
