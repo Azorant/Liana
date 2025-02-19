@@ -70,6 +70,10 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : DbCont
             {
                 entity.Property(e => e.Attachments)
                     .HasColumnType("json");
+                entity.Property(e => e.ContentEdits)
+                    .HasColumnType("json");
+                entity.Property(e => e.AttachmentsEdits)
+                    .HasColumnType("json");
             });
     }
 };

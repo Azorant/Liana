@@ -16,8 +16,21 @@ public class MessageEntity
     public required string AuthorTag { get; set; }
     [MaxLength(4000)]
     public string? Content { get; set; }
-    [MaxLength(4000)]
-    public string? EditedContent { get; set; }
+    public List<ContentEdit>? ContentEdits { get; set; }
     public List<string> Attachments { get; set; } = new();
+    public List<AttachmentsEdit>? AttachmentsEdits { get; set; }
     public bool Deleted { get; set; }
+}
+
+public class ContentEdit
+{
+    [MaxLength(4000)]
+    public string Content { get; set; }
+    public DateTime Date { get; set; }
+}
+
+public class AttachmentsEdit
+{
+    public List<string> Attachments { get; set; } = new();
+    public DateTime Date { get; set; }
 }

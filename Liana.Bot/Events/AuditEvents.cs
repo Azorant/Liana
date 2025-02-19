@@ -201,6 +201,8 @@ public class AuditEvents(IServiceProvider serviceProvider)
             if (socketMessage.Channel is not SocketGuildChannel channel) return;
             var db = serviceProvider.GetRequiredService<DatabaseContext>();
             var message = await db.Messages.FirstOrDefaultAsync(m => m.Id == socketMessage.Id);
+            var attachments = socketMessage.Attachments?.Select(a => a.Url).ToList() ?? [];
+            var content = string.IsNullOrEmpty(socketMessage.Content) ? null : socketMessage.Content;
             if (message == null)
             {
                 message = new MessageEntity
@@ -210,8 +212,8 @@ public class AuditEvents(IServiceProvider serviceProvider)
                     ChannelId = channel.Id,
                     AuthorId = socketMessage.Author.Id,
                     AuthorTag = Format.UsernameAndDiscriminator(socketMessage.Author, false),
-                    Content = string.IsNullOrEmpty(socketMessage.Content) ? null : socketMessage.Content,
-                    Attachments = socketMessage.Attachments?.Select(a => a.Url).ToList() ?? []
+                    Content = content,
+                    Attachments = attachments
                 };
                 await db.AddAsync(message);
                 await db.SaveChangesAsync();
@@ -219,12 +221,37 @@ public class AuditEvents(IServiceProvider serviceProvider)
                 return;
             }
 
-            message.EditedContent = string.IsNullOrEmpty(socketMessage.Content) ? null : socketMessage.Content;
+            var lastEdit = message.ContentEdits?.OrderByDescending(x => x.Date).FirstOrDefault()?.Content ?? message.Content;
+            var lastAttachment = message.AttachmentsEdits?.OrderByDescending(x => x.Date).FirstOrDefault()?.Attachments ?? message.Attachments;
+
+            // No difference in content!
+            if (lastEdit == content && lastAttachment.IsEqual(attachments)) return;
+
+            if (lastEdit != content)
+            {
+                message.ContentEdits ??= new();
+                message.ContentEdits.Add(new()
+                {
+                    Date = DateTime.UtcNow,
+                    Content = content!
+                });
+            }
+
+            if (!lastAttachment.IsEqual(attachments))
+            {
+                message.AttachmentsEdits ??= new();
+                message.AttachmentsEdits.Add(new ()
+                {
+                    Date = DateTime.UtcNow,
+                    Attachments = attachments
+                });
+            }
+
             db.Update(message);
             await db.SaveChangesAsync();
 
-            // Probably interaction message
-            if (message.Content == null && message.EditedContent == null && message.Attachments.Count == 0) return;
+            // We don't wanna log these
+            if (socketMessage.Type is MessageType.ApplicationCommand or MessageType.ContextMenuCommand) return;
 
             var auditLogService = serviceProvider.GetRequiredService<AuditLogService>();
             await auditLogService.SendAuditLog(channel.Guild, channel, AuditEventEnum.MessageUpdate, new FormatLogOptions

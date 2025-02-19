@@ -63,7 +63,8 @@ public static class Formatter
                 .ReplaceRegex("{member.nick}", options.Member.Nickname ?? Format.UsernameAndDiscriminator(options.Member, false))
                 .ReplaceRegex("{member.mention}", MentionUtils.MentionUser(options.Member.Id))
                 .ReplaceRegex("{member.age}", DateTimeOffset.UtcNow.Subtract(options.Member.CreatedAt).Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second))
-                .ReplaceRegex("{member.joined}", DateTimeOffset.UtcNow.Subtract(options.Member.JoinedAt.GetValueOrDefault()).Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second));
+                .ReplaceRegex("{member.joined}",
+                    DateTimeOffset.UtcNow.Subtract(options.Member.JoinedAt.GetValueOrDefault()).Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second));
         }
 
         if (options.Member2 != null)
@@ -77,7 +78,8 @@ public static class Formatter
                 .ReplaceRegex("{member2.nick}", options.Member2.Nickname ?? Format.UsernameAndDiscriminator(options.Member2, false))
                 .ReplaceRegex("{member2.mention}", MentionUtils.MentionUser(options.Member2.Id))
                 .ReplaceRegex("{member2.age}", DateTimeOffset.UtcNow.Subtract(options.Member2.CreatedAt).Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second))
-                .ReplaceRegex("{member2.joined}", DateTimeOffset.UtcNow.Subtract(options.Member2.JoinedAt.GetValueOrDefault()).Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second));
+                .ReplaceRegex("{member2.joined}",
+                    DateTimeOffset.UtcNow.Subtract(options.Member2.JoinedAt.GetValueOrDefault()).Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second));
         }
 
         if (options.Moderator != null)
@@ -91,7 +93,8 @@ public static class Formatter
                 .ReplaceRegex("{moderator.nick}", options.Moderator.Nickname ?? Format.UsernameAndDiscriminator(options.Moderator, false))
                 .ReplaceRegex("{moderator.mention}", MentionUtils.MentionUser(options.Moderator.Id))
                 .ReplaceRegex("{moderator.age}", DateTimeOffset.UtcNow.Subtract(options.Moderator.CreatedAt).Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second))
-                .ReplaceRegex("{moderator.joined}", DateTimeOffset.UtcNow.Subtract(options.Moderator.JoinedAt.GetValueOrDefault()).Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second));
+                .ReplaceRegex("{moderator.joined}",
+                    DateTimeOffset.UtcNow.Subtract(options.Moderator.JoinedAt.GetValueOrDefault()).Humanize(2, maxUnit: TimeUnit.Year, minUnit: TimeUnit.Second));
         }
 
         if (options.Channel != null)
@@ -113,26 +116,58 @@ public static class Formatter
         if (options.Message != null)
         {
             var origContent = "";
-            if (options.Message.Content is { Length: > 0 })
+            var editedContent = "";
+
+            switch (options.Message.ContentEdits)
             {
-                origContent =
-                    $"{Format.Sanitize(options.Message.Content)}{(options.Message.Attachments is { Count: > 0 } ? $"\n\nUploads:\n{string.Join("\n", options.Message.Attachments)}" : string.Empty)}";
-            }
-            else if (options.Message.Attachments is { Count: > 0 })
-            {
-                origContent = options.Message.Attachments.Count > 0 ? $"Uploads:\n{string.Join("\n", options.Message.Attachments)}" : string.Empty;
+                case { Count: >= 2 }:
+                {
+                    var edits = options.Message.ContentEdits.TakeLast(2).ToList();
+                    origContent += edits[0].Content.Sanitize();
+                    editedContent += edits[1].Content.Sanitize();
+                    break;
+                }
+                case { Count: 1 }:
+                {
+                    origContent += options.Message.Content?.Sanitize();
+                    editedContent += options.Message.ContentEdits.First().Content.Sanitize();
+                    break;
+                }
+                default:
+                {
+                    origContent += options.Message.Content?.Sanitize();
+                    break;
+                }
             }
 
-            var editedContent = "";
-            if (options.Message.EditedContent is { Length: > 0 })
+            if (options.Message.Attachments.Count != 0)
             {
-                editedContent =
-                    $"{Format.Sanitize(options.Message.EditedContent)}{(options.Message.Attachments is { Count: > 0 } ? $"\n\nUploads:\n{string.Join("\n", options.Message.Attachments)}" : string.Empty)}";
+                origContent += origContent.Length == 0 ? string.Empty : "\n\n";
+                editedContent += editedContent.Length == 0 ? string.Empty : "\n\n";
+                switch (options.Message.AttachmentsEdits)
+                {
+                    case { Count: >= 2 }:
+                    {
+                        var edits = options.Message.AttachmentsEdits.TakeLast(2).ToList();
+                        origContent += $"Uploads:\n{string.Join("\n", edits[0].Attachments)}";
+                        editedContent += $"Uploads:\n{string.Join("\n", edits[1].Attachments)}";
+                        break;
+                    }
+                    case { Count: 1 }:
+                    {
+                        origContent += $"Uploads:\n{string.Join("\n", options.Message.Attachments)}";
+                        editedContent +=
+                            $"Uploads:\n{string.Join("\n", options.Message.AttachmentsEdits.First().Attachments)}";
+                        break;
+                    }
+                    default:
+                    {
+                        origContent += $"Uploads:\n{string.Join("\n", options.Message.Attachments)}";
+                        break;
+                    }
+                }
             }
-            else if (options.Message.Attachments is { Count: > 0 })
-            {
-                editedContent = options.Message.Attachments.Count > 0 ? $"Uploads:\n{string.Join("\n", options.Message.Attachments)}" : string.Empty;
-            }
+
 
             if (string.IsNullOrEmpty(origContent)) origContent = "No content";
             if (string.IsNullOrEmpty(editedContent)) editedContent = "No content";
@@ -145,7 +180,7 @@ public static class Formatter
                 .ReplaceRegex("{message.edited}", Format.Code(editedContent, string.Empty))
                 .ReplaceRegex("{message.link}", $"https://discord.com/channels/{options.Message.GuildId}/{options.Message.ChannelId}/{options.Message.Id}");
         }
-        
+
         if (options.Role != null)
         {
             message = message
