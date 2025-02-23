@@ -140,6 +140,7 @@ public class AuditEvents(IServiceProvider serviceProvider)
         Task.Run(async () =>
         {
             if (oldSocketChannel is not SocketGuildChannel oldChannel || newSocketChannel is not SocketGuildChannel newChannel) return;
+            if (oldChannel.Name == newChannel.Name) return;
             var auditLogService = serviceProvider.GetRequiredService<AuditLogService>();
             await auditLogService.SendAuditLog(oldChannel.Guild, oldChannel, AuditEventEnum.ChannelUpdate, new FormatLogOptions
             {
