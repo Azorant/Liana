@@ -179,6 +179,14 @@ public static class Formatter
                 .ReplaceRegex("{message.content}", Format.Code(origContent, string.Empty))
                 .ReplaceRegex("{message.edited}", Format.Code(editedContent, string.Empty))
                 .ReplaceRegex("{message.link}", $"https://discord.com/channels/{options.Message.GuildId}/{options.Message.ChannelId}/{options.Message.Id}");
+
+            if (options.User == null)
+            {
+                message = message
+                    .ReplaceRegex("{user.id}", options.Message.AuthorId.ToString())
+                    .ReplaceRegex("{user.tag}", options.Message.AuthorTag)
+                    .ReplaceRegex("{user.mention}", MentionUtils.MentionUser(options.Message.AuthorId));
+            }
         }
 
         if (options.Role != null)

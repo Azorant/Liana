@@ -9,9 +9,9 @@ public static class AuditLogMessages
     public const string ChannelDelete = "[{timestamp}] 🗑️ Channel {channel.name} ({channel.id}) deleted";
     
     public const string MessageUpdate =
-        "[{timestamp}] ✏️ {member.tag} (`{member.id}`) edited a message in {channel.mention}\nBefore:\n{message.content}\nAfter:\n{message.edited}";
+        "[{timestamp}] ✏️ {user.tag} (`{user.id}`) edited a message in {channel.mention}\nBefore:\n{message.content}\nAfter:\n{message.edited}";
     
-    public const string MessageDelete = "[{timestamp}] 🗑️ {member.tag} (`{member.id}`) message deleted in {channel.mention}:\nMessage:\n{message.content}";
+    public const string MessageDelete = "[{timestamp}] 🗑️ {user.tag} (`{user.id}`) message deleted in {channel.mention}:\nMessage:\n{message.content}";
     
     public const string VoiceChannelJoin = "[{timestamp}] 🔊 {member.tag} (`{member.id}`) joined the voice channel {channel.mention}";
     

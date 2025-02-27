@@ -259,7 +259,7 @@ public class AuditEvents(IServiceProvider serviceProvider)
             {
                 Channel = channel,
                 Message = message,
-                Member = channel.Guild.GetUser(message.AuthorId)
+                User = socketMessage.Author
             });
         }).ContinueWith(t =>
         {
@@ -288,7 +288,7 @@ public class AuditEvents(IServiceProvider serviceProvider)
                 {
                     Channel = channel,
                     Message = message,
-                    Member = channel?.Guild.GetUser(message.AuthorId)
+                    User = client.GetUser(message.AuthorId)
                 });
         }).ContinueWith(t =>
         {
