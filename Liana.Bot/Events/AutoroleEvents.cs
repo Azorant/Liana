@@ -8,11 +8,7 @@ using Serilog;
 
 namespace Liana.Bot.Events;
 
-/// <summary>
-/// Handle member joins and reaction/button roles
-/// </summary>
-/// <param name="serviceProvider"></param>
-public class RoleEvents(IServiceProvider serviceProvider)
+public class AutoroleEvents(IServiceProvider serviceProvider)
 {
     public Task OnMemberJoined(SocketGuildUser socketUser)
     {

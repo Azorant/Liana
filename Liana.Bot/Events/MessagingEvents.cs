@@ -24,8 +24,9 @@ public class MessagingEvents(IServiceProvider serviceProvider)
             foreach (var message in config.Messaging.Where(x => x.Type == MessagingEnum.Join))
             {
                 var content = string.IsNullOrEmpty(message.Content) ? null : Formatter.FormatLog(message.Content, new FormatLogOptions { Guild = guild, Member = socketUser });
-                var embeds = message.Embeds.Select(x => EmbedBuilderUtils.Parse(Formatter.FormatLog(x, new FormatLogOptions { Guild = guild, Member = socketUser })).Build())
-                    .ToArray();
+                var embeds = message.Embeds?.Select(x => EmbedBuilderUtils.Parse(Formatter.FormatLog(x, new FormatLogOptions { Guild = guild, Member = socketUser })).Build())
+                                 .ToArray() ??
+                             [];
                 if (message.ChannelId.HasValue)
                 {
                     var channel = guild.GetChannel(message.ChannelId.Value);
@@ -77,10 +78,11 @@ public class MessagingEvents(IServiceProvider serviceProvider)
                 if (channel is not SocketTextChannel textChannel) continue;
                 var permissions = socketGuild.CurrentUser.GetPermissions(textChannel);
                 if (!permissions.ViewChannel || !permissions.SendMessages || !permissions.EmbedLinks) continue;
-                
+
                 var content = string.IsNullOrEmpty(message.Content) ? null : Formatter.FormatLog(message.Content, new FormatLogOptions { Guild = socketGuild, User = socketUser });
-                var embeds = message.Embeds.Select(x => EmbedBuilderUtils.Parse(Formatter.FormatLog(x, new FormatLogOptions { Guild = socketGuild, User = socketUser })).Build())
-                    .ToArray();
+                var embeds = message.Embeds?.Select(x => EmbedBuilderUtils.Parse(Formatter.FormatLog(x, new FormatLogOptions { Guild = socketGuild, User = socketUser })).Build())
+                                 .ToArray() ??
+                             [];
                 await textChannel.SendMessageAsync(content, embeds: embeds, allowedMentions: AllowedMentions.All);
             }
         }).ContinueWith(t =>

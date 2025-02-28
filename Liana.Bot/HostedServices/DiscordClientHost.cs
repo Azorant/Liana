@@ -15,8 +15,10 @@ internal sealed class DiscordClientHost : IHostedService
     private readonly InteractionService interactionService;
     private readonly IServiceProvider serviceProvider;
     private readonly AuditEvents auditEvents;
-    private readonly RoleEvents roleEvents;
+    private readonly AutoroleEvents autoroleEvents;
     private readonly MessagingEvents messagingEvents;
+    private readonly ClientEvents clientEvents;
+    private readonly ReactionEvents reactionEvents;
 
     public DiscordClientHost(
         DiscordSocketClient client,
@@ -31,8 +33,10 @@ internal sealed class DiscordClientHost : IHostedService
         this.interactionService = interactionService;
         this.serviceProvider = serviceProvider;
         auditEvents = new AuditEvents(serviceProvider);
-        roleEvents = new RoleEvents(serviceProvider);
+        autoroleEvents = new AutoroleEvents(serviceProvider);
         messagingEvents = new MessagingEvents(serviceProvider);
+        clientEvents = new ClientEvents(serviceProvider);
+        reactionEvents = new ReactionEvents(serviceProvider);
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -40,10 +44,10 @@ internal sealed class DiscordClientHost : IHostedService
         client.InteractionCreated += InteractionCreated;
         client.Ready += ClientReady;
         client.Log += LogAsync;
-        client.JoinedGuild += auditEvents.OnGuildJoined;
-        client.LeftGuild += auditEvents.OnGuildLeft;
-        client.Ready += auditEvents.OnClientReady;
-        client.Disconnected += auditEvents.OnClientDisconnected;
+        client.JoinedGuild += clientEvents.OnGuildJoined;
+        client.LeftGuild += clientEvents.OnGuildLeft;
+        client.Ready += clientEvents.OnClientReady;
+        client.Disconnected += clientEvents.OnClientDisconnected;
         interactionService.Log += LogAsync;
         interactionService.SlashCommandExecuted += SlashCommandExecuted;
 
@@ -66,13 +70,18 @@ internal sealed class DiscordClientHost : IHostedService
         #endregion
         
         #region guild role events
-        client.UserJoined += roleEvents.OnMemberJoined;
-        client.GuildMemberUpdated += roleEvents.OnMemberUpdated;
+        client.UserJoined += autoroleEvents.OnMemberJoined;
+        client.GuildMemberUpdated += autoroleEvents.OnMemberUpdated;
         #endregion
         
         #region messaging events
         client.UserJoined += messagingEvents.OnMemberJoined;
         client.UserLeft += messagingEvents.OnMemberLeft;
+        #endregion
+        
+        #region reaction events
+        client.ReactionAdded += reactionEvents.OnReactionAdded;
+        client.ReactionRemoved += reactionEvents.OnReactionRemoved;
         #endregion
 
         await client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("TOKEN"));
@@ -84,10 +93,10 @@ internal sealed class DiscordClientHost : IHostedService
         client.InteractionCreated -= InteractionCreated;
         client.Ready -= ClientReady;
         client.Log -= LogAsync;
-        client.JoinedGuild -= auditEvents.OnGuildJoined;
-        client.LeftGuild -= auditEvents.OnGuildLeft;
-        client.Ready -= auditEvents.OnClientReady;
-        client.Disconnected -= auditEvents.OnClientDisconnected;
+        client.JoinedGuild -= clientEvents.OnGuildJoined;
+        client.LeftGuild -= clientEvents.OnGuildLeft;
+        client.Ready -= clientEvents.OnClientReady;
+        client.Disconnected -= clientEvents.OnClientDisconnected;
         interactionService.Log -= LogAsync;
         interactionService.SlashCommandExecuted -= SlashCommandExecuted;
 
@@ -109,13 +118,18 @@ internal sealed class DiscordClientHost : IHostedService
         #endregion
 
         #region guild role events
-        client.UserJoined -= roleEvents.OnMemberJoined;
-        client.GuildMemberUpdated -= roleEvents.OnMemberUpdated;
+        client.UserJoined -= autoroleEvents.OnMemberJoined;
+        client.GuildMemberUpdated -= autoroleEvents.OnMemberUpdated;
         #endregion
         
         #region messaging events
         client.UserJoined -= messagingEvents.OnMemberJoined;
         client.UserLeft -= messagingEvents.OnMemberLeft;
+        #endregion
+        
+        #region reaction events
+        client.ReactionAdded -= reactionEvents.OnReactionAdded;
+        client.ReactionRemoved -= reactionEvents.OnReactionRemoved;
         #endregion
         
         await client.StopAsync();

@@ -11,7 +11,7 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : DbCont
     public DbSet<MessageEntity> Messages { get; set; }
     public DbSet<GuildMemberEntity> GuildMembers { get; set; }
 
-    public async Task<GuildConfig> GetConfig(ulong guildId)
+    public async Task<string> GetRawConfig(ulong guildId)
     {
         var record = await Guilds.FirstOrDefaultAsync(g => g.Id == guildId);
         if (record != null)
@@ -20,12 +20,14 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : DbCont
         record = new GuildEntity
         {
             Id = guildId,
-            Config = new GuildConfig()
+            Config = GuildConfig.DefaultConfig
         };
         await AddAsync(record);
         await SaveChangesAsync();
         return record.Config;
     }
+    
+    public async Task<GuildConfig> GetConfig(ulong guildId) => Parser.DeserializeConfig(await GetRawConfig(guildId));
 
     public async Task<GuildMemberEntity> GetMember(ulong guildId, ulong userId)
     {
@@ -58,13 +60,6 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : DbCont
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<GuildEntity>(
-            entity =>
-            {
-                entity.Property(e => e.Config)
-                    .HasColumnType("json");
-            });
-
         modelBuilder.Entity<MessageEntity>(
             entity =>
             {

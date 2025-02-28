@@ -12,11 +12,10 @@ public class AuditLogService(DatabaseContext db, DiscordSocketClient client)
 {
     public async Task SendAuditLog(ulong guildId, ulong? channelId, AuditEventEnum auditEvent, FormatLogOptions options)
     {
-        var guild = await db.Guilds.FirstOrDefaultAsync(g => g.Id == guildId);
-        if (guild?.Config.AuditLogs == null ||
-            guild.Config.AuditLogs.Count == 0) return;
+        var guildConfig = await db.GetConfig(guildId);
+        if (guildConfig.AuditLogs == null || guildConfig.AuditLogs.Count == 0) return;
 
-        var configs = guild.Config.AuditLogs.Where(c => c.Value.EnabledEvents.Contains(auditEvent) || c.Value.EnabledEvents.Contains(AuditEventEnum.All)).ToList();
+        var configs = guildConfig.AuditLogs.Where(c => c.Value.EnabledEvents.Contains(auditEvent) || c.Value.EnabledEvents.Contains(AuditEventEnum.All)).ToList();
 
         foreach (var (logChannelId, config) in configs)
         {

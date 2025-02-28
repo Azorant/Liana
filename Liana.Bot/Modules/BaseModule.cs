@@ -12,7 +12,8 @@ namespace Liana.Bot.Modules;
 public class BaseModule(DatabaseContext db) : InteractionModuleBase<SocketInteractionContext>
 {
     protected Task<GuildConfig> GetConfigAsync() => db.GetConfig(Context.Guild.Id);
-    
+    protected Task<string> GetRawConfigAsync() => db.GetRawConfig(Context.Guild.Id);
+
     /// <summary>
     /// Check if user has config role
     /// </summary>
@@ -45,7 +46,7 @@ public class BaseModule(DatabaseContext db) : InteractionModuleBase<SocketIntera
         }
     }
 
-    protected async Task SendSuccessAsync(string description)
+    protected async Task SendSuccessAsync(string description, bool modify = false)
     {
         var embed = new EmbedBuilder()
             .WithTitle(":white_check_mark: Success")
@@ -55,7 +56,10 @@ public class BaseModule(DatabaseContext db) : InteractionModuleBase<SocketIntera
             .Build();
         if (Context.Interaction.HasResponded)
         {
-            await FollowupAsync(embed: embed);
+            if (modify)
+                await ModifyOriginalResponseAsync(m => m.Embed = embed);
+            else
+                await FollowupAsync(embed: embed);
         }
         else
         {
