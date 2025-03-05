@@ -20,18 +20,18 @@ public class BaseModule(DatabaseContext db) : InteractionModuleBase<SocketIntera
     /// <param name="config"></param>
     /// <param name="permission"></param>
     /// <returns></returns>
-    protected bool AssertAdminRole(GuildConfig config, RoleEnum permission)
+    protected bool AssertConfigRole(GuildConfig config, RoleEnum permission)
     {
         if (Context.Guild.OwnerId == Context.User.Id) return true;
         if (config.Roles == null) return false;
-        var roles = Context.Guild.GetUser(Context.User.Id).Roles.Select(r => r.Id).ToList();
-        return config.Roles.Where(s => s.Value == permission).Any(role => roles.Contains(role.Key));
+        var userRoles = Context.Guild.GetUser(Context.User.Id).Roles.Select(r => r.Id).ToList();
+        return config.Roles.Where(r => userRoles.Contains(r.Key)).Any(role => role.Value.HasFlag(permission));
     }
 
-    protected async Task SendErrorAsync(string error)
+    protected async Task SendErrorAsync(string error, string title = "Error")
     {
         var embed = new EmbedBuilder()
-            .WithTitle(":warning: Error")
+            .WithTitle($":warning: {title}")
             .WithDescription(error)
             .WithTimestamp(DateTimeOffset.UtcNow)
             .WithColor(Color.Gold)
@@ -66,4 +66,6 @@ public class BaseModule(DatabaseContext db) : InteractionModuleBase<SocketIntera
             await RespondAsync(embed: embed);
         }
     }
+
+    protected Task SendPermissionErrorAsync(string text) => SendErrorAsync(text, "Missing Permission");
 }

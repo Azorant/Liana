@@ -19,7 +19,7 @@ public class ConfigModule(DatabaseContext db) : BaseModule(db)
         await DeferAsync();
         var raw = await GetRawConfigAsync();
         var config = Parser.DeserializeConfig(raw);
-        if (!AssertAdminRole(config, RoleEnum.Admin))
+        if (!AssertConfigRole(config, RoleEnum.Admin))
         {
             await SendErrorAsync("Missing permission to view config");
             return;
@@ -38,7 +38,7 @@ public class ConfigModule(DatabaseContext db) : BaseModule(db)
     {
         var raw = await GetRawConfigAsync();
         var config = Parser.DeserializeConfig(raw);
-        if (!AssertAdminRole(config, RoleEnum.Admin))
+        if (!AssertConfigRole(config, RoleEnum.Admin))
         {
             await SendErrorAsync("Missing permission to view config");
             return;
@@ -53,7 +53,7 @@ public class ConfigModule(DatabaseContext db) : BaseModule(db)
     {
         await DeferAsync();
         var config = await GetConfigAsync();
-        if (!AssertAdminRole(config, RoleEnum.Admin))
+        if (!AssertConfigRole(config, RoleEnum.Admin))
         {
             await SendErrorAsync("Missing permission");
             return;

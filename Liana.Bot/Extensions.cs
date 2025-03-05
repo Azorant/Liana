@@ -38,4 +38,6 @@ public static class Extensions
             .ReplaceRegex("_", "\u200B_")
             .ReplaceRegex("`", "\u02CB")
             .ReplaceRegex("\\|", "\u200B|");
+    public static List<string> Missing(this ChannelPermissions permissions, params ChannelPermission[] toCheck) =>
+        toCheck.Where(p => !permissions.Has(p)).Select(p => Enum.GetName(p)!).ToList();
 }
