@@ -4,6 +4,7 @@ using Liana.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Liana.Database.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20250308114254_Add reminders")]
+    partial class Addreminders
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -36,7 +39,7 @@ namespace Liana.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Guilds", (string)null);
+                    b.ToTable("Guilds");
                 });
 
             modelBuilder.Entity("Liana.Database.Entities.GuildMemberEntity", b =>
@@ -58,7 +61,7 @@ namespace Liana.Database.Migrations
 
                     b.HasIndex("GuildId");
 
-                    b.ToTable("GuildMembers", (string)null);
+                    b.ToTable("GuildMembers");
                 });
 
             modelBuilder.Entity("Liana.Database.Entities.MessageEntity", b =>
@@ -104,7 +107,7 @@ namespace Liana.Database.Migrations
 
                     b.HasIndex("GuildId");
 
-                    b.ToTable("Messages", (string)null);
+                    b.ToTable("Messages");
                 });
 
             modelBuilder.Entity("Liana.Database.Entities.ReminderEntity", b =>
@@ -132,7 +135,7 @@ namespace Liana.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Reminders", (string)null);
+                    b.ToTable("Reminders");
                 });
 
             modelBuilder.Entity("Liana.Database.Entities.GuildMemberEntity", b =>

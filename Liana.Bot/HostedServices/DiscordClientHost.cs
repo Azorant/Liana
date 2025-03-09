@@ -9,7 +9,7 @@ using Serilog.Events;
 
 namespace Liana.Bot.HostedServices;
 
-internal sealed class DiscordClientHost : IHostedService
+public sealed class DiscordClientHost : IHostedService
 {
     private readonly DiscordSocketClient client;
     private readonly InteractionService interactionService;

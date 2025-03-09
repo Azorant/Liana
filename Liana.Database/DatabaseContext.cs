@@ -10,6 +10,7 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : DbCont
     public DbSet<GuildEntity> Guilds { get; set; }
     public DbSet<MessageEntity> Messages { get; set; }
     public DbSet<GuildMemberEntity> GuildMembers { get; set; }
+    public DbSet<ReminderEntity> Reminders { get; set; }
 
     public async Task<string> GetRawConfig(ulong guildId)
     {
@@ -26,7 +27,7 @@ public class DatabaseContext(DbContextOptions<DatabaseContext> options) : DbCont
         await SaveChangesAsync();
         return record.Config;
     }
-    
+
     public async Task<GuildConfig> GetConfig(ulong guildId) => Parser.DeserializeConfig(await GetRawConfig(guildId));
 
     public async Task<GuildMemberEntity> GetMember(ulong guildId, ulong userId)

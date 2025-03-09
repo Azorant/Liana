@@ -6,6 +6,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Liana.Database", "Liana.Dat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Liana.Models", "Liana.Models\Liana.Models.csproj", "{0388534A-3CA3-46C5-9CA9-CFA8A012B525}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Liana.Startup", "Liana.Startup\Liana.Startup.csproj", "{D63EE533-A60C-4DA0-9184-CF838A6EAA40}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Liana.API", "Liana.API\Liana.API.csproj", "{68EB911B-804C-4EDC-B458-9350D72CD487}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +28,13 @@ Global
 		{0388534A-3CA3-46C5-9CA9-CFA8A012B525}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0388534A-3CA3-46C5-9CA9-CFA8A012B525}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0388534A-3CA3-46C5-9CA9-CFA8A012B525}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D63EE533-A60C-4DA0-9184-CF838A6EAA40}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D63EE533-A60C-4DA0-9184-CF838A6EAA40}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D63EE533-A60C-4DA0-9184-CF838A6EAA40}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D63EE533-A60C-4DA0-9184-CF838A6EAA40}.Release|Any CPU.Build.0 = Release|Any CPU
+		{68EB911B-804C-4EDC-B458-9350D72CD487}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{68EB911B-804C-4EDC-B458-9350D72CD487}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{68EB911B-804C-4EDC-B458-9350D72CD487}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{68EB911B-804C-4EDC-B458-9350D72CD487}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

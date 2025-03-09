@@ -82,7 +82,8 @@ public class ConfigModule(DatabaseContext db) : BaseModule(db)
                 if (message == null) continue;
                 foreach (var (raw, _) in emotes)
                 {
-                    IEmote emote = Parser.DeserializeEmote(raw);
+                    var emote = Parser.DeserializeEmote(raw);
+                    if (message.Reactions.ContainsKey(emote) && message.Reactions[emote].IsMe) continue;
                     try
                     {
                         await message.AddReactionAsync(emote);

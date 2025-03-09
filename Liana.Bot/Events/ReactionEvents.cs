@@ -16,6 +16,7 @@ public class ReactionEvents(IServiceProvider serviceProvider)
     {
         Task.Run(async () =>
         {
+            if (reaction.UserId == client.CurrentUser.Id) return;
             if (await cacheableChannel.GetOrDownloadAsync() is not SocketTextChannel channel) return;
             var guild = channel.Guild;
             var currentUser = guild.CurrentUser;
@@ -70,6 +71,7 @@ public class ReactionEvents(IServiceProvider serviceProvider)
     {
         Task.Run(async () =>
         {
+            if (reaction.UserId == client.CurrentUser.Id) return;
             if (await cacheableChannel.GetOrDownloadAsync() is not SocketTextChannel channel) return;
             var guild = channel.Guild;
             var currentUser = guild.CurrentUser;
