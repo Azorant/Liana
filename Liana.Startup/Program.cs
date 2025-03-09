@@ -44,7 +44,7 @@ try
         .AddSingleton<InteractiveService>()
         .AddSingleton(new DiscordSocketConfig
         {
-            GatewayIntents = GatewayIntents.Guilds
+            GatewayIntents = GatewayIntents.All
         })
         .AddSingleton<DiscordSocketClient>()
         .AddSingleton<InteractionService>(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>()))
